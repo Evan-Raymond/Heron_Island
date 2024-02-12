@@ -24,7 +24,7 @@ options(ggrepel.max.overlaps = Inf)
 filter<-dplyr::filter
 select<-dplyr::select
 
-detach(package:plyr)
+detach(package:dplyr)
 
 
 
@@ -42,11 +42,55 @@ A1_417_LT_4<-list.files(pattern = ("\\(9).CSV")) %>%
   na.omit() %>% 
   mutate(across(.cols=1:4, .fns=as.numeric))
 
-DLIC_HI_29_01_a<-DLIC_HI_29_01_a %>% 
-  mutate(
-    Treatment = case_when(Time..rel.ms. < 1613647 ~ "ODT_2_1023",
-                               Time..rel.ms. > 1613646 ~ 	"ODT_3_1053")) %>% 
-  
+
+# Bringing DLIC data in from "\WinControl\Heron Island\DLIC_CSV"
+ # Mutating 1st YNO and YNPQ values to Fo/Fm and 0 respectively. May need to rethink that with respect to actual YNPQ values resulting from diel cycle.
+  # Could be that 1st YNPQ is Fv/Fm - YII? Then YNO would be the remainder. Will only be possible with data where morning Fv/Fm is available 
+
+DLIC_HI_29_01_b <-list.files(pattern = ("\\_29_01_b.csv")) %>%  
+  ldply(read_csv2, skip=0, col_select = c(ms = 'Time (rel/ms)', everything())) %>% 
+   rename(eF = "1:F",
+         eFm = "1:Fm'",
+         PAR = "1:PAR",
+         Temp = "1:Temp",
+         YII = "1:Y (II)",
+         YNO = "1:Y (NO)",
+         YNPQ = "1:Y (NPQ)",
+         ETR = "1:ETR",
+         Fo = "1:Fo",
+         Fm = "1:Fm",
+         Fv = "1:Fv/Fm") %>% 
+   mutate(Sample = rep(1:16, times = 17),
+     Treatment = case_when(Sample == 1 ~ eFm),
+     Sample_1 = rep(1:17, each = 16)) %>% 
+  group_by(Sample_1) %>% 
+  mutate(Treatment_1 = unique(Treatment))
+                           
+                           Sample == 2 ~ "IDT_2_1128",
+                           Sample == 2 ~ ,
+                           Sample == 2 ~ ,
+                           Sample == 2 ~ ,
+                           Sample == 2 ~ ,
+                           Sample == 2 ~ ,
+                           Sample == 2 ~ 
+                                
+                           
+                           )),
+          YNO = case_when(YNO == "-" ~ Fo/Fm,
+                          TRUE ~ as.numeric(YNO)),
+          YNPQ = case_when(YNPQ == "-" ~ 0,
+                           TRUE ~ as.numeric(YNPQ)),
+          across(c(eF, eFm, YII, Fv), .fns=as.numeric)) %>% 
+  na.omit() %>% 
+  # select(-Datetime)
+                                
+
+
+str(DLIC_HI_29_01_a)
+
+
+ 
+DLIC_HI_All<-rbind(DLIC_HI_29_01_a)  
 
 
 
