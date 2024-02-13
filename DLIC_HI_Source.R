@@ -134,6 +134,20 @@ HI_DLIC_All_1 %>%
 
 
 
+HI_DLIC_Dunn_FvFm_1<-HI_DLIC_All_1 %>% 
+  group_by(Treatment, Sun, Position) %>% 
+  dunn_test(FvFm ~ Species, p.adjust.method = "holm")  
+  filter(!p.adj.signif == "ns")
+
+DLIC_22_23_Dunn_YNPQ_Light<-DLIC_22_23_Complete_1 %>% 
+  group_by(Type_5, Temp) %>% 
+  dunn_test(YNPQ~ Light, p.adjust.method = "holm")  %>% 
+  filter(p.adj.signif == "ns")
+
+DLIC_22_23_Dunn_YNPQ_Temp<-DLIC_22_23_Complete_1 %>% 
+  group_by(Type_5, Light) %>% 
+  dunn_test(YNPQ~ Temp, p.adjust.method = "holm", detailed = TRUE)   
+filter(p.adj.signif == "ns")
 
 
 
