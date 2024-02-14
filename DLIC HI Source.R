@@ -116,40 +116,53 @@ HI_DLIC_All_2<-HI_DLIC_All_1 %>%
 
 
 
-HI_DLIC_All_mean<-HI_DLIC_All_1 %>% 
-  pivot_longer(cols = c(ETR, starts_with("Y")), names_to = "Parameter", values_to = "Value") %>% 
-  # pivot_longer(cols = starts_with("n"), names_to = "nParameter", values_to = "n_Value") %>%
-  group_by(Species, Position, Treatment, Sun, SP, Parameter) %>% 
-  summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n()),
-            # nMean=mean(n_Value, na.rm=TRUE), nSD=sd(n_Value, na.rm=TRUE), nSE=nSD/sqrt(n()),
-            ETR_Mean = mean(ETR)) %>% 
+HI_DLIC_All_y_mean<-HI_DLIC_All_1 %>% 
+  pivot_longer(cols = starts_with("Y"), names_to = "Parameter", values_to = "Value") %>% 
+  group_by(Species, Position, Treatment,  SP, Parameter, Date) %>% 
+  summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
   ungroup() %>% 
   mutate(Parameter = factor(Parameter, levels=c("YII","YNPQ", "YNO")),
-         # nParameter = factor(nParameter, levels=c("nYII","nYNPQ", "nYNO")),
-         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
+         # Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
          Treatment = factor(Treatment, levels = c("ML", "HL")),
-         Position = factor(Position, levels = c("Ventral", "Dorsal")))
+         Position = factor(Position, levels = c("Ventral", "Dorsal"))) %>% 
+  # filter(Date != "2024-01-29")
+  filter(Date == "2024-01-31")
   
-
 HI_DLIC_All_mean_hline<- HI_DLIC_All_mean %>% 
   filter(Parameter == "YNO", SP == 1)
 
 
+HI_DLIC_All_etr_mean<-HI_DLIC_All_1 %>% 
+  pivot_longer(cols = ETR, names_to = "Parameter", values_to = "Value") %>% 
+  group_by(Species, Position, Treatment,  SP, Parameter, Date) %>% 
+  summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
+  ungroup() %>% 
+  mutate(
+         Treatment = factor(Treatment, levels = c("ML", "HL")),
+         # Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
+         Position = factor(Position, levels = c("Ventral", "Dorsal"))) %>% 
+  # filter(Date != "2024-01-29")
+  filter(Date == "2024-01-31")
+
+coef<-550
 
 
-
-ggplot(HI_DLIC_All_mean, aes(x=SP, y=Mean, fill= Parameter))+
-  geom_col(aes( fill = Parameter ), colour = "black", position = "fill")+
+ggplot()+
+  geom_col(aes(x=SP, y=Mean, fill = Parameter ),HI_DLIC_All_y_mean, colour = "black", position = "fill")+
+  geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean)+
+  geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
   geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline )+
   theme_classic()+
-  facet_rep_grid(cols=vars(Sun, Position), rows=vars(Species, Treatment), scales ="free")+
-  theme(strip.background = element_blank(),
+  scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR"))+
+  facet_grid(cols=vars(Date), rows=vars(Species, Position, Treatment), scales ="fixed")+
+  theme(strip.placement = "outside",
+    strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0),
         legend.justification = c("left"))+
-  scale_y_continuous(expand = c(0, 0))+
+  
   scale_x_continuous(expand = c(0, 0))+
-  coord_cartesian(ylim = c(0.25, NA))
+  coord_cartesian(ylim = c(NA, NA))
 
 
 , limits = c(0.25, 1)
