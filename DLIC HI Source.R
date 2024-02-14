@@ -26,28 +26,14 @@ select<-dplyr::select
 
 detach(package:dplyr)
 
-sample_n<-
 
-# Stupidly single digits need ([a|b]), double digits (aa|bb)
-
-A1_417_LT_4<-list.files(pattern = ("\\(9).CSV")) %>% 
-  ldply(read_csv2, skip=1) %>% 
-  
-  select("Y(II)", "Y(NPQ)", "Y(NO)", "No.") %>%
-  mutate(Type = "A1", Type_2="H_L", Light = "400_417", AL_PAR = "417", Temp = "26", Sample = 4) %>% 
-  rename(TP = No.,
-         YII = "Y(II)",
-         YNPQ = "Y(NPQ)",
-         YNO = "Y(NO)")  %>% 
-  na.omit() %>% 
-  mutate(across(.cols=1:4, .fns=as.numeric))
 
 
 # Bringing DLIC data in from "\WinControl\Heron Island\DLIC_CSV"
  # Mutating 1st YNO and YNPQ values to Fo/Fm and 0 respectively. May need to rethink that with respect to actual YNPQ values resulting from diel cycle.
   # Could be that 1st YNPQ is Fv/Fm - YII? Then YNO would be the remainder. Will only be possible with data where morning Fv/Fm is available 
 
-DLIC_HI_29_01_a<- list.files(pattern = ("\\_29_01_a.csv")) %>% 
+DLIC_HI_31_01_d<- list.files(pattern = ("\\_31_01_d.csv")) %>% 
   ldply(read_csv2, skip=0, col_select = c(ms = 'Time (rel/ms)', everything())) %>% 
    rename(eF = "1:F",
          eFm = "1:Fm'",
@@ -72,7 +58,7 @@ DLIC_HI_29_01_a<- list.files(pattern = ("\\_29_01_a.csv")) %>%
     mutate(Treatment = first(X)) %>% 
     mutate(across(c(eF, eFm, YII, FvFm), .fns=as.numeric)) %>%
   ungroup() %>% 
-  select(-Sample_1, -X, -Datetime) %>% 
+  select(-Sample_1, -X) %>% 
   na.omit()
    # group_by(Sample_1) %>%                              
 
@@ -97,7 +83,7 @@ HI_DLIC_All<-rbind(DLIC_29_01, DLIC_30_01, DLIC_31_01, DLIC_01_02, DLIC_02_02, D
 
 HI_DLIC_All<-HI_DLIC_All %>% 
   mutate(Treatment = case_when(Treatment == "IVT_1_45min_DA_1439" ~ "IVT_1_1439_45min_DA",
-                               TRUE ~ Treatment))
+                               TRUE ~ Treatment)) 
 
 
 HI_DLIC_All_1<-HI_DLIC_All %>%   
@@ -114,25 +100,66 @@ HI_DLIC_All_1<-HI_DLIC_All %>%
          Type_1 = case_when(Species == "A. aspera" ~ "A", Species == "A. muricata" ~ "M"),
          Sun = case_when(Start %in% c(758:1110) ~ "Morning",
                          Start %in% c(1111:1400) ~ "Midday",
-                         Start %in% c(1401:1700) ~ "Afternoon"))
-  
+                         Start %in% c(1401:1709) ~ "Afternoon")) %>% 
+  group_by(Species,Position, Treatment, Sample, Start) %>% 
+  mutate(SP = row_number()) %>% 
+  ungroup()
+  # mutate(nYNPQ = (YNPQ*100/PAR), nYNO = (YNO*100/PAR), nYII = (YII*100/PAR)) 
 
-HI_DLIC_All_1 %>% 
-  group_by(Sun) %>% 
-  summarise(N = n())
-
-  
 str(HI_DLIC_All_1)
 
+HI_DLIC_All_2<-HI_DLIC_All_1 %>% 
+  group_by(Species,Position, Treatment, Sample, Start) %>% 
+  summarise(N=n())
 
-HI_DLIC_All_anova_FvFm<-compare_means(FvFm ~ Species,HI_DLIC_All_1, method = "kruskal.test", group.by = c("Sun", "Treatment", "Position"))
+
+
+
+
+HI_DLIC_All_mean<-HI_DLIC_All_1 %>% 
+  pivot_longer(cols = c(ETR, starts_with("Y")), names_to = "Parameter", values_to = "Value") %>% 
+  # pivot_longer(cols = starts_with("n"), names_to = "nParameter", values_to = "n_Value") %>%
+  group_by(Species, Position, Treatment, Sun, SP, Parameter) %>% 
+  summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n()),
+            # nMean=mean(n_Value, na.rm=TRUE), nSD=sd(n_Value, na.rm=TRUE), nSE=nSD/sqrt(n()),
+            ETR_Mean = mean(ETR)) %>% 
+  ungroup() %>% 
+  mutate(Parameter = factor(Parameter, levels=c("YII","YNPQ", "YNO")),
+         # nParameter = factor(nParameter, levels=c("nYII","nYNPQ", "nYNO")),
+         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
+         Treatment = factor(Treatment, levels = c("ML", "HL")),
+         Position = factor(Position, levels = c("Ventral", "Dorsal")))
+  
+
+HI_DLIC_All_mean_hline<- HI_DLIC_All_mean %>% 
+  filter(Parameter == "YNO", SP == 1)
+
+
+
+
+
+ggplot(HI_DLIC_All_mean, aes(x=SP, y=Mean, fill= Parameter))+
+  geom_col(aes( fill = Parameter ), colour = "black", position = "fill")+
+  # geom_vline(xintercept=c(2,12), linetype="dashed")+
+  geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline )+
+  theme_classic()+
+  facet_rep_grid(cols=vars(Sun, Position), rows=vars(Species, Treatment), scales ="free")+
+  theme(strip.background = element_blank(),
+        strip.text.y.right= element_text(angle=0),
+        legend.justification = c("left"))+
+  scale_y_continuous(expand = c(0, 0))+
+  scale_x_continuous(expand = c(0, 0))+
+  coord_cartesian(ylim = c(0.25, NA))
+
+
+, limits = c(0.25, 1)
+
+HI_DLIC_All_Kruskal_FvFm<-compare_means(FvFm ~ Species,HI_DLIC_All_1, method = "kruskal.test", group.by = c("Sun", "Treatment", "Position"))
 
 
 HI_DLIC_All_1 %>% 
   group_by("Sun", "Treatment", "Position") %>% 
   tukey_hsd(FvFm ~ Species)
-
-
 
 HI_DLIC_Dunn_FvFm_1<-HI_DLIC_All_1 %>% 
   group_by(Treatment, Sun, Position) %>% 
@@ -148,8 +175,3 @@ DLIC_22_23_Dunn_YNPQ_Temp<-DLIC_22_23_Complete_1 %>%
   group_by(Type_5, Light) %>% 
   dunn_test(YNPQ~ Temp, p.adjust.method = "holm", detailed = TRUE)   
 filter(p.adj.signif == "ns")
-
-
-
-
-
