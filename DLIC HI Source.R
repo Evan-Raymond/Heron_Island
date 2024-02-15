@@ -164,7 +164,8 @@ ggplot()+
   geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean)+
   geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
-  geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline )+
+  geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline)+
+  # geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean, colour="black", width=0.3)+
   theme_classic()+
   scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR"))+
   facet_rep_grid(cols=vars(Date_1,Treatment,AmPm), rows=vars( Species,Position), scales ="free")+
@@ -175,7 +176,7 @@ ggplot()+
         legend.justification = c("left"))+
   
   scale_x_continuous(expand = c(0, 0))+
-  coord_cartesian(ylim = c(NA, NA))
+  coord_cartesian(ylim = c(0, 1))
 
 
 , limits = c(0.25, 1)
