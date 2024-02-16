@@ -160,7 +160,7 @@ coef<-700
 
 
 ggplot()+
-  geom_col(aes(x=SP, y=Mean, fill = Parameter ),HI_DLIC_All_y_mean, colour = "black", position = "fill")+
+  geom_col(aes(x=SP, y=Mean, fill = Parameter ),HI_DLIC_All_y_mean , position = "fill")+
   geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean)+
   geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
@@ -178,7 +178,7 @@ ggplot()+
   scale_x_continuous(expand = c(0, 0))+
   coord_cartesian(ylim = c(0, 1))
 
-
+colour = "black"
 , limits = c(0.25, 1)
 
 HI_DLIC_All_Kruskal_FvFm<-compare_means(FvFm ~ Species,HI_DLIC_All_1, method = "kruskal.test", group.by = c("Sun", "Treatment", "Position"))
