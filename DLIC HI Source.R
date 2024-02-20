@@ -202,3 +202,35 @@ DLIC_22_23_Dunn_YNPQ_Temp<-DLIC_22_23_Complete_1 %>%
   group_by(Type_5, Light) %>% 
   dunn_test(YNPQ~ Temp, p.adjust.method = "holm", detailed = TRUE)   
 filter(p.adj.signif == "ns")
+
+# Building HI_DLIC_All_y_mean_1 to merge with FvFmFo df to compare Fv / diel effects
+
+HI_DLIC_All_y_mean_1<-HI_DLIC_All_1 %>% 
+  filter(Notes == "-") %>% 
+  pivot_longer(cols = starts_with("Y"), names_to = "Parameter", values_to = "Value_1") %>%
+  group_by(Species, Position, Treatment,Parameter,  SP, Date) %>% 
+  summarise(Value=mean(Value_1, na.rm=TRUE), SE_Value=sd(Value_1)/sqrt(n())) %>%
+  ungroup() %>% 
+  mutate(Parameter = factor(Parameter, levels=c("YII","YNPQ", "YNO")),
+         # Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
+         Treatment = factor(Treatment, levels = c("ML", "HL")),
+         Position = factor(Position, levels = c("Ventral", "Dorsal"))) %>% 
+  na.omit()
+
+FmFo_HI_mean<- Fv_HI_All_1 %>% 
+  group_by(Species, Position, Date, Treatment, AmPm) %>% 
+  summarise(Fm_m = mean(Fm), FmSE = sd(Fm)/sqrt(n()),
+            Fo_m = mean(Fo), FoSE = sd(Fo)/sqrt(n())) %>% 
+  rename(Fm = "Fm_m", Fo = "Fo_m") %>% 
+  # group_by(Species, Position, Date, Treatment)
+  pivot_longer(cols = c(Fm, Fo), names_to = "Parameter", values_to = "Value") %>% 
+  # filter(AmPm != "AM") %>%
+  mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
+
+FmFo_HI_mean_n5_1<-FmFo_HI_mean_n5 %>% 
+  pivot_longer(c(FmSE,FoSE), names_to = "SE", values_to = "SE_Value")
+
+
+
+
+
