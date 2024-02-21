@@ -100,9 +100,9 @@ HI_DLIC_All_1<-HI_DLIC_All %>%
   mutate_at(c("Position", "Treatment", "Date"), .funs=as.factor) %>% 
   mutate(Temp = case_when(Temp > 100 ~ Temp / 10, TRUE ~ Temp),
          Type_1 = case_when(Species == "A. aspera" ~ "A", Species == "A. muricata" ~ "M"),
-         Sun = case_when(Start %in% c(758:1110) ~ "Morning",
-                         Start %in% c(1111:1400) ~ "Midday",
-                         Start %in% c(1401:1709) ~ "Afternoon"),
+         Sun = case_when(Start %in% c(758:1104) ~ "Morning",
+                         Start %in% c(1105:1354) ~ "Midday",
+                         Start %in% c(1355:1709) ~ "Afternoon"),
          AmPm = case_when(Start %in% c(758:1230) ~ "AM",
                           Start %in% c(1231:1709) ~ "PM"),
          Date_1 = case_when(Date %in% c("2024-01-30","2024-01-31") ~ "1",
@@ -118,9 +118,9 @@ HI_DLIC_All_1<-HI_DLIC_All %>%
 str(HI_DLIC_All_1)
 
 HI_DLIC_All_2<-HI_DLIC_All_1 %>% 
-  group_by(Date) %>% 
+  group_by(Sun) %>% 
   summarise(N=n())
-
+HI_DLIC_All_2
 
 
 
@@ -205,32 +205,69 @@ filter(p.adj.signif == "ns")
 
 # Building HI_DLIC_All_y_mean_1 to merge with FvFmFo df to compare Fv / diel effects
 
+
 HI_DLIC_All_y_mean_1<-HI_DLIC_All_1 %>% 
-  filter(Notes == "-") %>% 
-  pivot_longer(cols = starts_with("Y"), names_to = "Parameter", values_to = "Value_1") %>%
-  group_by(Species, Position, Treatment,Parameter,  SP, Date) %>% 
-  summarise(Value=mean(Value_1, na.rm=TRUE), SE_Value=sd(Value_1)/sqrt(n())) %>%
-  ungroup() %>% 
-  mutate(Parameter = factor(Parameter, levels=c("YII","YNPQ", "YNO")),
-         # Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
-         Treatment = factor(Treatment, levels = c("ML", "HL")),
-         Position = factor(Position, levels = c("Ventral", "Dorsal"))) %>% 
-  na.omit()
+  filter(Notes %in% c("-"), Type == "FO") %>%  
+  select(Date, YII, Fo, Fm, YNO, YNPQ, Species, Position, Treatment, Sample, AmPm, Sun)
 
-FmFo_HI_mean<- Fv_HI_All_1 %>% 
-  group_by(Species, Position, Date, Treatment, AmPm) %>% 
-  summarise(Fm_m = mean(Fm), FmSE = sd(Fm)/sqrt(n()),
-            Fo_m = mean(Fo), FoSE = sd(Fo)/sqrt(n())) %>% 
-  rename(Fm = "Fm_m", Fo = "Fo_m") %>% 
-  # group_by(Species, Position, Date, Treatment)
-  pivot_longer(cols = c(Fm, Fo), names_to = "Parameter", values_to = "Value") %>% 
-  # filter(AmPm != "AM") %>%
-  mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
+FvFmFo_HI_mean<-rbind(Fv_HI_mean_n5_1, FmFo_HI_mean_n5_1) %>% 
+  select(-SE_Fv, -Notes, -Type_1, -SE_Value_Fv) %>% 
+  unique() %>% 
+  pivot_wider(names_from = Parameter_Fv, names_prefix = "DA_", values_from = Value_Fv)
 
-FmFo_HI_mean_n5_1<-FmFo_HI_mean_n5 %>% 
-  pivot_longer(c(FmSE,FoSE), names_to = "SE", values_to = "SE_Value")
+  
+HI_DLIC_FvFmFo_mean<-merge(FvFmFo_HI_mean, HI_DLIC_All_y_mean_1) 
+
+HI_DLIC_FmFo_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
+  mutate(E_Fo =  Fo/2 - DA_Fo, E_Fm =  Fm/2 - DA_Fm,
+         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
+  group_by(Species, Date, Position, Treatment, Sun) %>% 
+  summarise(Change_in_Fo = mean(E_Fo), Change_in_Fm = mean(E_Fm)) %>% 
+  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") 
+
+HI_DLIC_Fv_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
+  mutate(E_YII =  YII - DA_FvFm ,
+         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
+  group_by(Species, Date, Position, Treatment, Sun) %>% 
+  summarise(Change_in_YII = mean(E_YII)) %>% 
+  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") %>% 
+  unite()
+  
+coef_3<-1500  
+ 
+ggplot()+
+  geom_col(aes(x = Date, y = Value, colour = Effective_Parameter, group = Effective_Parameter, fill = Effective_Parameter),
+           HI_DLIC_FmFo_mean_compare,position = "dodge")+
+  geom_line(aes(x = Date, y = Value*coef_3, group = Effective_Parameter),
+            HI_DLIC_Fv_mean_compare,color = "black",show.legend = TRUE)+
+  theme_classic()+
+  facet_rep_grid(cols = vars(Treatment,Sun), rows = vars( Species,Position))+
+  theme(strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text.y.right= element_text(angle=0), 
+        axis.title.y.right = element_text(vjust=-42),
+        legend.justification = c("left")) 
+
+
+ggplot()+
+  # geom_col(aes(x = Date, y = Value, colour = Effective_Parameter, group = Effective_Parameter, fill = Effective_Parameter),
+  #          HI_DLIC_FmFo_mean_compare,position = "dodge")+
+  geom_line(aes(x = Date, y = Value*coef_3, colour = Sun),
+           HI_DLIC_Fv_mean_compare,show.legend = TRUE)+
+  theme_classic()+
+  facet_rep_grid(cols = vars(Treatment), rows = vars(Position, Species))+
+  theme(strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text.y.right= element_text(angle=0), 
+        axis.title.y.right = element_text(vjust=-42),
+        legend.justification = c("left"))
 
 
 
+  cols = starts_with("Y"), 
+
+
+
+str(HI_DLIC_Fv_mean_compare)
 
 

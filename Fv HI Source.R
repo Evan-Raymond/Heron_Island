@@ -120,7 +120,7 @@ FmFo_HI_mean_n5<- Fv_HI_All_1 %>%
   ungroup() %>% 
   unique() %>%
   rename(Fm = "Fm_m", Fo = "Fo_m") %>% 
-  pivot_longer(cols = c(Fm, Fo), names_to = "Parameter", values_to = "Value") %>% 
+  pivot_longer(cols = c(Fm, Fo), names_to = "Parameter_Fv", values_to = "Value_Fv") %>% 
   # filter(AmPm != "AM") %>%
   mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
   
@@ -145,7 +145,7 @@ Fv_HI_mean_n5<- Fv_HI_All_1 %>%
   ungroup() %>% 
   unique() %>%
   rename(FvFm = "FvFm_m") %>% 
-  pivot_longer(cols = c(FvFm), names_to = "Parameter", values_to = "Value") %>% 
+  pivot_longer(cols = c(FvFm), names_to = "Parameter_Fv", values_to = "Value_Fv") %>% 
   # filter(AmPm != "AM") %>%
   mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
               
@@ -204,13 +204,15 @@ Fv_HI_All_1_1<-Fv_HI_All_1 %>%
   summarise(N=n())
 
 Fv_HI_mean_n5_1<-Fv_HI_mean_n5 %>% 
-  pivot_longer(FvSE, names_to = "SE", values_to = "SE_Value")
+  pivot_longer(FvSE, names_to = "SE_Fv", values_to = "SE_Value_Fv")
 
 FmFo_HI_mean_n5_1<-FmFo_HI_mean_n5 %>% 
-  pivot_longer(c(FmSE,FoSE), names_to = "SE", values_to = "SE_Value")
+  pivot_longer(c(FmSE,FoSE), names_to = "SE_Fv", values_to = "SE_Value_Fv")
 
 FvFmFo_HI_mean<-rbind(Fv_HI_mean_n5_1, FmFo_HI_mean_n5_1) %>% 
-  select(-SE)
+  select(-SE_Fv, -Notes, -Type_1, -SE_Value_Fv) %>% 
+  unique() %>% 
+  pivot_wider(names_from = Parameter_Fv, names_prefix = "DA_", values_from = Value_Fv)
   
 
 
