@@ -218,22 +218,23 @@ FvFmFo_HI_mean<-rbind(Fv_HI_mean_n5_1, FmFo_HI_mean_n5_1) %>%
   
 HI_DLIC_FvFmFo_mean<-merge(FvFmFo_HI_mean, HI_DLIC_All_y_mean_1) 
 
-HI_DLIC_FmFo_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
-  mutate(E_Fo =  Fo/2 - DA_Fo, E_Fm =  Fm/2 - DA_Fm,
-         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
-  group_by(Species, Date, Position, Treatment, Sun) %>% 
-  summarise(Change_in_Fo = mean(E_Fo), Change_in_Fm = mean(E_Fm)) %>% 
-  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") 
+coef_DA<-2.1
 
-HI_DLIC_Fv_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
-  mutate(E_YII =  YII - DA_FvFm ,
+# Using below to try and find a common ratio, not quite there yet
+
+HI_DLIC_FmFo_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
+  mutate(E_Fo =  Fo - DA_Fo, E_Fm =  Fm - DA_Fm, E_YII =  YII - DA_FvFm, 
          Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
   group_by(Species, Date, Position, Treatment, Sun) %>% 
-  summarise(Change_in_YII = mean(E_YII)) %>% 
+  summarise(Change_in_Fo = mean(E_Fo), Change_in_Fm = mean(E_Fm), Change_in_YII = mean(E_YII), 
+            Fo = mean(Fo), Fm = mean(Fm), mean_YII = mean(YII),DA_Fo = mean(DA_Fo), DA_Fm = mean(DA_Fm), DA_FvFm = mean(DA_FvFm)) %>% 
   pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") %>% 
-  unite()
-  
-coef_3<-1500  
+  mutate(Ratio_Fo = Fo/DA_Fo, Ratio_Fm = Fm/DA_Fm) %>% 
+  filter(Effective_Parameter == "Change_in_YII" ) %>% 
+  filter(Value %in% c(-0.05:0.05))
+  summarise(Mean_Ratio_Fo = mean(Ratio_Fo), Mean_Ratio_Fm = mean(Ratio_Fm))
+
+str(HI_DLIC_FmFo_mean_compare)  
  
 ggplot()+
   geom_col(aes(x = Date, y = Value, colour = Effective_Parameter, group = Effective_Parameter, fill = Effective_Parameter),
@@ -249,6 +250,16 @@ ggplot()+
         legend.justification = c("left")) 
 
 
+HI_DLIC_Fv_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
+  mutate(E_YII =  YII - DA_FvFm ,
+         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
+  group_by(Species, Date, Position, Treatment, Sun) %>% 
+  summarise(Change_in_YII = mean(E_YII)) %>% 
+  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") %>% 
+  unite()
+  
+coef_3<-1500
+
 ggplot()+
   # geom_col(aes(x = Date, y = Value, colour = Effective_Parameter, group = Effective_Parameter, fill = Effective_Parameter),
   #          HI_DLIC_FmFo_mean_compare,position = "dodge")+
@@ -263,8 +274,6 @@ ggplot()+
         legend.justification = c("left"))
 
 
-
-  cols = starts_with("Y"), 
 
 
 
