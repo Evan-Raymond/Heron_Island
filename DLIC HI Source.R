@@ -220,28 +220,34 @@ HI_DLIC_FvFmFo_mean<-merge(FvFmFo_HI_mean, HI_DLIC_All_y_mean_1)
 
 coef_DA<-2.1
 
-# Using below to try and find a common ratio, not quite there yet
+# Found a common ratio by averaging the the difference in Fm and Fo when Fv/Fm -0.05 <> 0.05
 
 HI_DLIC_FmFo_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
-  mutate(E_Fo =  Fo - DA_Fo, E_Fm =  Fm - DA_Fm, E_YII =  YII - DA_FvFm, 
+  mutate(E_Fo =  Fo - DA_Fo*2.070037, E_Fm =  Fm - DA_Fm*1.900761, E_YII =  YII - DA_FvFm, 
          Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
   group_by(Species, Date, Position, Treatment, Sun) %>% 
   summarise(Change_in_Fo = mean(E_Fo), Change_in_Fm = mean(E_Fm), Change_in_YII = mean(E_YII), 
             Fo = mean(Fo), Fm = mean(Fm), mean_YII = mean(YII),DA_Fo = mean(DA_Fo), DA_Fm = mean(DA_Fm), DA_FvFm = mean(DA_FvFm)) %>% 
-  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") %>% 
+  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value")
   mutate(Ratio_Fo = Fo/DA_Fo, Ratio_Fm = Fm/DA_Fm) %>% 
   filter(Effective_Parameter == "Change_in_YII" ) %>% 
-  filter(Value %in% c(-0.05:0.05))
+  filter(Value >= -0.05 & Value <= 0.05) %>% 
+  ungroup() %>% 
   summarise(Mean_Ratio_Fo = mean(Ratio_Fo), Mean_Ratio_Fm = mean(Ratio_Fm))
 
 str(HI_DLIC_FmFo_mean_compare)  
- 
+  
+coef_3<-2000 
+
+
 ggplot()+
   geom_col(aes(x = Date, y = Value, colour = Effective_Parameter, group = Effective_Parameter, fill = Effective_Parameter),
            HI_DLIC_FmFo_mean_compare,position = "dodge")+
   geom_line(aes(x = Date, y = Value*coef_3, group = Effective_Parameter),
             HI_DLIC_Fv_mean_compare,color = "black",show.legend = TRUE)+
   theme_classic()+
+  geom_hline(yintercept = 0) + 
+  scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~./coef_3, name="Fv/Fm"))+
   facet_rep_grid(cols = vars(Treatment,Sun), rows = vars( Species,Position))+
   theme(strip.placement = "outside",
         strip.background = element_blank(),
@@ -255,10 +261,9 @@ HI_DLIC_Fv_mean_compare<-HI_DLIC_FvFmFo_mean %>%
          Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
   group_by(Species, Date, Position, Treatment, Sun) %>% 
   summarise(Change_in_YII = mean(E_YII)) %>% 
-  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") %>% 
-  unite()
+  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") 
   
-coef_3<-1500
+
 
 ggplot()+
   # geom_col(aes(x = Date, y = Value, colour = Effective_Parameter, group = Effective_Parameter, fill = Effective_Parameter),
