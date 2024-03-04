@@ -153,12 +153,12 @@ coef_1<- 1750
   
 
 ggplot()+
-  geom_col(aes(x = Date, y = Value, fill = Parameter), FmFo_HI_mean_n5,position = "dodge") +
+  geom_col(aes(x = Date, y = Value_Fv, fill = Parameter_Fv), FmFo_HI_mean_n5,position = "dodge") +
   # scale_fill_brewer(palette="Paired")+
   scale_fill_manual(values=c("#2B8CBE","#5AAE61"))+
-  geom_line(aes(x = Date, y=Value*coef_1),Fv_HI_mean_n5) +
-  geom_point(aes(x= Date, y=Value*coef_1,),Fv_HI_mean_n5 )+
-  geom_errorbar(aes(x=Date, ymax= (Value+FvSE)*coef_1, ymin=(Value-FvSE)*coef_1),Fv_HI_mean_n5, width = 0.25 )+
+  geom_line(aes(x = Date, y=Value_Fv*coef_1),Fv_HI_mean_n5) +
+  geom_point(aes(x= Date, y=Value_Fv*coef_1,),Fv_HI_mean_n5 )+
+  geom_errorbar(aes(x=Date, ymax= (Value_Fv+FvSE)*coef_1, ymin=(Value_Fv-FvSE)*coef_1),Fv_HI_mean_n5, width = 0.25 )+
   scale_y_continuous(name = "Fluorescence (au)", expand = c(0, 0),sec.axis = sec_axis(~./coef_1, name="Fv/Fm"))+
   # scale_x_continuous(expand = c(NA,NA))+
   facet_rep_grid(cols=vars(Treatment,Position), rows=vars( Species), scales ="fixed")+

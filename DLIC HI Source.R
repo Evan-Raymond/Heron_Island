@@ -218,12 +218,13 @@ FvFmFo_HI_mean<-rbind(Fv_HI_mean_n5_1, FmFo_HI_mean_n5_1) %>%
   
 HI_DLIC_FvFmFo_mean<-merge(FvFmFo_HI_mean, HI_DLIC_All_y_mean_1) 
 
-coef_DA<-2.1
+coef_Fo<-2.070037
+coef_Fm<-1.900761
 
 # Found a common ratio by averaging the the difference in Fm and Fo when Fv/Fm -0.05 <> 0.05
 
 HI_DLIC_FmFo_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
-  mutate(E_Fo =  Fo - DA_Fo*2.070037, E_Fm =  Fm - DA_Fm*1.900761, E_YII =  YII - DA_FvFm, 
+  mutate(E_Fo =  Fo - DA_Fo*coef_Fo, E_Fm =  Fm - DA_Fm*coef_Fm, E_YII =  YII - DA_FvFm, 
          Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
   group_by(Species, Date, Position, Treatment, Sun) %>% 
   summarise(Change_in_Fo = mean(E_Fo), Change_in_Fm = mean(E_Fm), Change_in_YII = mean(E_YII), 
