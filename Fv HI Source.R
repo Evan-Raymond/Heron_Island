@@ -101,7 +101,7 @@ FmFo_HI_mean<- Fv_HI_All_1 %>%
   mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
 
 FmFo_HI_mean_n5<- Fv_HI_All_1 %>% 
-  group_by(Species, Position, Date, Treatment) %>% 
+  group_by(Species, Position, Date, Treatment, AmPm) %>% 
   mutate(Fm_m = if_else(Date %in% as.Date(c("2024-01-31", "2024-02-06")),
                         sum(Fm)/5,
                         sum(Fm)/10),
@@ -133,7 +133,7 @@ Fv_HI_mean<- Fv_HI_All_1 %>%
   mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
 
 Fv_HI_mean_n5<- Fv_HI_All_1 %>% 
-  group_by(Species, Position, Date, Treatment) %>% 
+  group_by(Species, Position, Date, Treatment, AmPm) %>% 
   mutate(FvFm_m = if_else(Date %in% as.Date(c("2024-01-31", "2024-02-06")),
                                  sum(FvFm)/5,
                                  sum(FvFm)/10),
@@ -161,7 +161,7 @@ ggplot()+
   geom_errorbar(aes(x=Date, ymax= (Value_Fv+FvSE)*coef_1, ymin=(Value_Fv-FvSE)*coef_1),Fv_HI_mean_n5, width = 0.25 )+
   scale_y_continuous(name = "Fluorescence (au)", expand = c(0, 0),sec.axis = sec_axis(~./coef_1, name="Fv/Fm"))+
   # scale_x_continuous(expand = c(NA,NA))+
-  facet_rep_grid(cols=vars(Treatment,Position), rows=vars( Species), scales ="fixed")+
+  facet_rep_grid(cols=vars(AmPm,Treatment,Position), rows=vars( Species), scales ="fixed")+
   theme_classic()+
   theme(strip.placement = "outside",
         strip.background = element_blank(),

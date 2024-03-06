@@ -100,14 +100,16 @@ HI_DLIC_All_1<-HI_DLIC_All %>%
   mutate_at(c("Position", "Treatment", "Date"), .funs=as.factor) %>% 
   mutate(Temp = case_when(Temp > 100 ~ Temp / 10, TRUE ~ Temp),
          Type_1 = case_when(Species == "A. aspera" ~ "A", Species == "A. muricata" ~ "M"),
-         Sun = case_when(Start %in% c(758:1104) ~ "Morning",
-                         Start %in% c(1105:1354) ~ "Midday",
+         Sun = case_when(Start %in% c(758:1114) ~ "Morning",
+                         Start %in% c(1115:1354) ~ "Midday",
                          Start %in% c(1355:1709) ~ "Afternoon"),
          AmPm = case_when(Start %in% c(758:1230) ~ "AM",
                           Start %in% c(1231:1709) ~ "PM"),
-         Date_1 = case_when(Date %in% c("2024-01-30","2024-01-31") ~ "1",
-                            Date %in% c('2024-02-01',"2024-02-02","2024-02-03")  ~ "2",
-                            Date %in% c("2024-02-04","2024-02-05") ~ "3")) %>% 
+         Date_1 = case_when(Date %in% c("2024-01-29","2024-01-30","2024-01-31") ~ "1",
+                            Date %in% c('2024-02-01',"2024-02-02")  ~ "2",
+                            Date %in% c("2024-02-04","2024-02-05","2024-02-03") ~ "3"),
+         Date_2 = case_when(Date %in% c("2024-01-29","2024-01-30","2024-01-31",'2024-02-01') ~ "1-4",
+                            Date %in% c("2024-02-02","2024-02-03","2024-02-04","2024-02-05") ~ "5-8")) %>% 
   group_by(Species,Position, Treatment, Sample, Start) %>% 
   mutate(SP = row_number()) %>% 
   ungroup()
@@ -118,7 +120,7 @@ HI_DLIC_All_1<-HI_DLIC_All %>%
 str(HI_DLIC_All_1)
 
 HI_DLIC_All_2<-HI_DLIC_All_1 %>% 
-  group_by(Sun) %>% 
+  group_by(Date_2) %>% 
   summarise(N=n())
 HI_DLIC_All_2
 
@@ -128,11 +130,11 @@ HI_DLIC_All_2
 HI_DLIC_All_y_mean<-HI_DLIC_All_1 %>% 
   filter(Notes == "-") %>% 
   pivot_longer(cols = starts_with("Y"), names_to = "Parameter", values_to = "Value") %>% 
-  group_by(Species, Position, Treatment,  SP, Parameter, AmPm, Date_1) %>% 
+  group_by(Species, Position, Treatment,  SP, Parameter, Date_2, Sun) %>% 
   summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
   ungroup() %>% 
   mutate(Parameter = factor(Parameter, levels=c("YII","YNPQ", "YNO")),
-         # Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
+         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
          Treatment = factor(Treatment, levels = c("ML", "HL")),
          Position = factor(Position, levels = c("Ventral", "Dorsal"))) %>% 
   na.omit()
@@ -146,17 +148,17 @@ HI_DLIC_All_mean_hline<- HI_DLIC_All_y_mean %>%
 HI_DLIC_All_etr_mean<-HI_DLIC_All_1 %>% 
   filter(Notes == "-") %>% 
   pivot_longer(cols = ETR, names_to = "Parameter", values_to = "Value") %>% 
-  group_by(Species, Position, Treatment,  SP, Parameter, AmPm, Date_1) %>% 
+  group_by(Species, Position, Treatment,  SP, Parameter, Date_2, Sun) %>% 
   summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
   ungroup() %>% 
   mutate(
          Treatment = factor(Treatment, levels = c("ML", "HL")),
-         # Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
+         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
          Position = factor(Position, levels = c("Ventral", "Dorsal"))) %>% 
   filter(SP != 1) %>% 
   na.omit()
 
-coef<-700
+coef<-1000
 
 
 ggplot()+
@@ -168,7 +170,7 @@ ggplot()+
   # geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean, colour="black", width=0.3)+
   theme_classic()+
   scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR"))+
-  facet_rep_grid(cols=vars(Date_1,Treatment,AmPm), rows=vars( Species,Position), scales ="free")+
+  facet_rep_grid(cols=vars(Treatment,Date_2,Sun), rows=vars( Species,Position), scales ="free")+
   theme(strip.placement = "outside",
         strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0), 
