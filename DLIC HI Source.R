@@ -124,7 +124,8 @@ HI_DLIC_All_2<-HI_DLIC_All_1 %>%
   summarise(N=n())
 HI_DLIC_All_2
 
-
+HI_DLIC_All_3<-HI_DLIC_All_1 %>% 
+  filter(Type != "FO")
 
 
 HI_DLIC_All_y_mean<-HI_DLIC_All_1 %>% 
@@ -162,7 +163,7 @@ coef<-1000
 
 
 ggplot()+
-  geom_col(aes(x=SP, y=Mean, fill = Parameter ),HI_DLIC_All_y_mean , position = "fill")+
+  geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean , position = "fill")+
   geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean)+
   geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
@@ -256,7 +257,7 @@ ggplot()+
         strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0), 
         axis.title.y.right = element_text(vjust=-42),
-        legend.justification = c("left")) 
+        legend.justification = c(0.5,0.5), legend.position = c(1.22, 0.5)) 
 
 
 HI_DLIC_Fv_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
