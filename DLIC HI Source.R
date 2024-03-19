@@ -105,11 +105,12 @@ HI_DLIC_All_1<-HI_DLIC_All %>%
                          Start %in% c(1355:1709) ~ "Afternoon"),
          AmPm = case_when(Start %in% c(758:1230) ~ "AM",
                           Start %in% c(1231:1709) ~ "PM"),
-         Date_1 = case_when(Date %in% c("2024-01-29","2024-01-30","2024-01-31") ~ "1",
-                            Date %in% c('2024-02-01',"2024-02-02")  ~ "2",
-                            Date %in% c("2024-02-04","2024-02-05","2024-02-03") ~ "3"),
+         Date_1 = case_when(Date %in% c("2024-01-29","2024-01-30","2024-01-31") ~ "1-3",
+                            Date %in% c('2024-02-01',"2024-02-02")  ~ "4-5",
+                            Date %in% c("2024-02-04","2024-02-05","2024-02-03") ~ "6-8"),
          Date_2 = case_when(Date %in% c("2024-01-29","2024-01-30","2024-01-31",'2024-02-01') ~ "1-4",
-                            Date %in% c("2024-02-02","2024-02-03","2024-02-04","2024-02-05") ~ "5-8")) %>% 
+                            Date %in% c("2024-02-02","2024-02-03","2024-02-04","2024-02-05") ~ "5-8"),
+         Day = case_when()) %>% 
   group_by(Species,Position, Treatment, Sample, Start) %>% 
   mutate(SP = row_number()) %>% 
   ungroup()
@@ -128,10 +129,10 @@ HI_DLIC_All_3<-HI_DLIC_All_1 %>%
   filter(Type != "FO")
 
 
-HI_DLIC_All_y_mean<-HI_DLIC_All_1 %>% 
+HI_DLIC_All_y_mean_D<-HI_DLIC_All_1 %>% 
   filter(Notes == "-") %>% 
   pivot_longer(cols = starts_with("Y"), names_to = "Parameter", values_to = "Value") %>% 
-  group_by(Species, Position, Treatment,  SP, Parameter, Date_2, Sun) %>% 
+  group_by(Species, Position, Treatment,  SP, Parameter, Date, Sun) %>% 
   summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
   ungroup() %>% 
   mutate(Parameter = factor(Parameter, levels=c("YII","YNPQ", "YNO")),
@@ -141,15 +142,15 @@ HI_DLIC_All_y_mean<-HI_DLIC_All_1 %>%
   na.omit()
 
   
-HI_DLIC_All_mean_hline<- HI_DLIC_All_y_mean %>% 
+HI_DLIC_All_mean_hline_D<- HI_DLIC_All_y_mean_D %>% 
   filter(Parameter == "YNO", SP == 1) %>% 
   na.omit()
 
 
-HI_DLIC_All_etr_mean<-HI_DLIC_All_1 %>% 
+HI_DLIC_All_etr_mean_D<-HI_DLIC_All_1 %>% 
   filter(Notes == "-") %>% 
   pivot_longer(cols = ETR, names_to = "Parameter", values_to = "Value") %>% 
-  group_by(Species, Position, Treatment,  SP, Parameter, Date_2, Sun) %>% 
+  group_by(Species, Position, Treatment,  SP, Parameter, Date, Sun) %>% 
   summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
   ungroup() %>% 
   mutate(
@@ -161,23 +162,48 @@ HI_DLIC_All_etr_mean<-HI_DLIC_All_1 %>%
 
 coef<-1000
 
+Plot_DLIC_D
+Plot_DLIC_D1
+Plot_DLIC_D2
+ # _D = Date (1,2,3,4,5,6,7,8)
+ # _D1 = Date_1 (1-3, 4-5, 6-8)
+ # _D2 = Date_2 (1-4, 5-8)
+ 
 
-ggplot()+
-  geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean , position = "fill")+
-  geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean)+
-  geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean)+
+
+Plot_DLIC_D<-ggplot()+
+  geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean_D , position = "fill")+
+  geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean_D)+
+  geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean_D)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
-  geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline)+
-  # geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean, colour="black", width=0.3)+
+  geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline_D1)+
+  geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean_D, colour="black", width=0.3)+
   theme_classic()+
   scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR"))+
-  facet_rep_grid(cols=vars(Treatment,Date_2,Sun), rows=vars( Species,Position), scales ="free")+
+  facet_rep_grid(cols=vars(Treatment,Date,Sun), rows=vars( Species,Position), scales ="free")+
   theme(strip.placement = "outside",
         strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0), 
         axis.title.y.right = element_text(vjust=-42),
         legend.justification = c("left"))+
-  
+  scale_x_continuous(expand = c(0, 0))+
+  coord_cartesian(ylim = c(0, 1))
+
+Plot_DLIC_D2<-ggplot()+
+  geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean_D2 , position = "fill")+
+  geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean_D2)+
+  geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean_D2)+
+  # geom_vline(xintercept=c(2,12), linetype="dashed")+
+  geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline_D2)+
+  geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean_D2, colour="black", width=0.3)+
+  theme_classic()+
+  scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR"))+
+  facet_rep_grid(cols=vars(Treatment,Date_1,Sun), rows=vars( Species,Position), scales ="free")+
+  theme(strip.placement = "outside",
+        strip.background = element_blank(),
+        strip.text.y.right= element_text(angle=0), 
+        axis.title.y.right = element_text(vjust=-42),
+        legend.justification = c("left"))+
   scale_x_continuous(expand = c(0, 0))+
   coord_cartesian(ylim = c(0, 1))
 
