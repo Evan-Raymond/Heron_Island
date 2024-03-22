@@ -198,7 +198,7 @@ Plot_DLIC_D2<-ggplot()+
   geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean_D2, colour="black", width=0.3)+
   theme_classic()+
   scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR"))+
-  facet_rep_grid(cols=vars(Treatment,Date_1,Sun), rows=vars( Species,Position), scales ="free")+
+  facet_rep_grid(cols=vars(Treatment,Date_2,Sun), rows=vars( Species,Position), scales ="free")+
   theme(strip.placement = "outside",
         strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0), 

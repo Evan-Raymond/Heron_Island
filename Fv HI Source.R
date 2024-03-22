@@ -100,8 +100,8 @@ FmFo_HI_mean<- Fv_HI_All_1 %>%
   # filter(AmPm != "AM") %>%
   mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
 
-FmFo_HI_mean_n5<- Fv_HI_All_1 %>% 
-  group_by(Species, Position, Date, Treatment, AmPm) %>% 
+FmFo_HI_mean_NoAmPm<- Fv_HI_All_1 %>% 
+  group_by(Species, Position, Date, Treatment) %>% 
   mutate(Fm_m = if_else(Date %in% as.Date(c("2024-01-31", "2024-02-06")),
                         sum(Fm)/5,
                         sum(Fm)/10),
@@ -113,55 +113,66 @@ FmFo_HI_mean_n5<- Fv_HI_All_1 %>%
                         sum(Fo)/10),
          FoSE = if_else(Date %in% as.Date(c("2024-01-31", "2024-02-06")),
                         sd(Fo)/sqrt(5),
-                        sd(Fo/sqrt(10)))) %>% 
-  # summarise(Fm_m = sum(Fm/5), FmSE = sd(Fm)/sqrt(5),
-  #           Fo_m = sum(Fo/5), FoSE = sd(Fo)/sqrt(5)) %>% 
-  select(-Fo, -Fm, -Sample, -FvFm, -Time, -AmPm) %>% 
+                        sd(Fo/sqrt(10)))) %>%
+  # mutate(Fm_m = sum(Fm/5), FmSE = sd(Fm)/sqrt(5),
+  #           Fo_m = sum(Fo/5), FoSE = sd(Fo)/sqrt(5)) %>%
+  select(-Fo, -Fm, -Sample, -FvFm, -Time,-Notes, -AmPm) %>%
   ungroup() %>% 
   unique() %>%
-  rename(Fm = "Fm_m", Fo = "Fo_m") %>% 
+  rename(Fm = "Fm_m", Fo = "Fo_m") %>%
   pivot_longer(cols = c(Fm, Fo), names_to = "Parameter_Fv", values_to = "Value_Fv") %>% 
+  mutate(SE = case_when(Parameter_Fv == "Fm" ~ FmSE,
+                        TRUE ~ FoSE)) %>% 
+  select(-FoSE, -FmSE) %>% 
   # filter(AmPm != "AM") %>%
   mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
+
+
+Fv_HI_All_2<-Fv_HI_All_1 %>% 
+  group_by(Species, Position, Date, Treatment, AmPm) %>% 
+  summarise(N=n()) 
+
   
 Fv_HI_mean<- Fv_HI_All_1 %>% 
   group_by(Species, Position, Date, Treatment, AmPm) %>% 
-  summarise(FvFm_m = mean(FvFm), FvSE = sd(FvFm)/sqrt(n())) %>%
+  summarise(FvFm_m = mean(FvFm), FvSE = sd(FvFm)/sqrt(5) %>%
   rename(FvFm = "FvFm_m") %>% 
   pivot_longer(cols = c(FvFm), names_to = "Parameter", values_to = "Value") %>% 
   # filter(AmPm != "AM") %>%
   mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
 
-Fv_HI_mean_n5<- Fv_HI_All_1 %>% 
-  group_by(Species, Position, Date, Treatment, AmPm) %>% 
+Fv_HI_mean_NoAmPm<- Fv_HI_All_1 %>% 
+  group_by(Species, Position, Date, Treatment) %>% 
   mutate(FvFm_m = if_else(Date %in% as.Date(c("2024-01-31", "2024-02-06")),
-                                 sum(FvFm)/5,
+                                 sum(FvFm)/n(),
                                  sum(FvFm)/10),
          FvSE = if_else(Date %in% as.Date(c("2024-01-31", "2024-02-06")),
-                        sd(FvFm)/sqrt(5),
-                        sd(FvFm/sqrt(10)))) %>% 
-  # summarise(FvFm_m = sum(FvFm)/5, FvSE = sd(FvFm)/sqrt(n())) %>%
-  select(-Fo, -Fm, -Sample, -FvFm, -Time, -AmPm) %>% 
+                        sd(FvFm)/sqrt(n()),
+                        sd(FvFm/sqrt(10)))) %>%
+  # mutate(FvFm_m = sum(FvFm)/5, FvSE = sd(FvFm)/sqrt(5)) %>%
+  select(-Fo, -Fm, -Sample, -FvFm, -Time, -Notes) %>%
   ungroup() %>% 
   unique() %>%
-  rename(FvFm = "FvFm_m") %>% 
+  rename(FvFm = "FvFm_m") %>%
   pivot_longer(cols = c(FvFm), names_to = "Parameter_Fv", values_to = "Value_Fv") %>% 
   # filter(AmPm != "AM") %>%
   mutate(Treatment = factor(Treatment, levels=c("ML","HL")))
               
 coef_1<- 1750              
-  
 
-ggplot()+
-  geom_col(aes(x = Date, y = Value_Fv, fill = Parameter_Fv), FmFo_HI_mean_n5,position = "dodge") +
+dodge<- position_dodge(width=0.9)  
+
+Plot_Fv_AmPm<-ggplot()+
+  geom_col(aes(x = Date, y = Value_Fv, fill = Parameter_Fv), FmFo_HI_mean_n5,position = "dodge2") +
   # scale_fill_brewer(palette="Paired")+
   scale_fill_manual(values=c("#2B8CBE","#5AAE61"))+
   geom_line(aes(x = Date, y=Value_Fv*coef_1),Fv_HI_mean_n5) +
   geom_point(aes(x= Date, y=Value_Fv*coef_1,),Fv_HI_mean_n5 )+
   geom_errorbar(aes(x=Date, ymax= (Value_Fv+FvSE)*coef_1, ymin=(Value_Fv-FvSE)*coef_1),Fv_HI_mean_n5, width = 0.25 )+
+  geom_errorbar(aes(x=Date, ymax= (Value_Fv+FmSE), ymin=(Value_Fv-FmSE)),FmFo_HI_mean_n5, position = position_dodge2(width = 0.5, padding = 0.5))+
   scale_y_continuous(name = "Fluorescence (au)", expand = c(0, 0),sec.axis = sec_axis(~./coef_1, name="Fv/Fm"))+
   # scale_x_continuous(expand = c(NA,NA))+
-  facet_rep_grid(cols=vars(AmPm,Treatment,Position), rows=vars( Species), scales ="fixed")+
+  facet_rep_grid(cols=vars(Treatment,Position, AmPm), rows=vars( Species), scales ="fixed")+
   theme_classic()+
   theme(strip.placement = "outside",
         strip.background = element_blank(),
@@ -170,16 +181,17 @@ ggplot()+
         axis.title.y.right = element_text(vjust=-22),
         legend.justification = c("left"))
 
-ggplot()+
-  geom_col(aes(x = Date, y = Value, fill = Parameter), FmFo_HI_mean,position = "dodge") +
+Plot_Fv_NoAmPm<-ggplot()+
+  geom_col(aes(x = Date, y = Value_Fv, fill = Parameter_Fv), FmFo_HI_mean_NoAmPm,position = "dodge2") +
   # scale_fill_brewer(palette="Paired")+
   scale_fill_manual(values=c("#2B8CBE","#5AAE61"))+
-  geom_line(aes(x = Date, y=Value*coef_1),Fv_HI_mean) +
-  geom_point(aes(x= Date, y=Value*coef_1,),Fv_HI_mean )+
-  geom_errorbar(aes(x=Date, ymax= (Value+FvSE)*coef_1, ymin=(Value-FvSE)*coef_1),Fv_HI_mean, width = 0.25 )+
+  geom_line(aes(x = Date, y=Value_Fv*coef_1),Fv_HI_mean_NoAmPm) +
+  geom_point(aes(x= Date, y=Value_Fv*coef_1,),Fv_HI_mean_NoAmPm )+
+  geom_errorbar(aes(x=Date, ymax= (Value_Fv+FvSE)*coef_1, ymin=(Value_Fv-FvSE)*coef_1),Fv_HI_mean_NoAmPm, width = 0.25 )+
+  geom_errorbar(aes(x=Date, ymax= (Value_Fv+SE), ymin=(Value_Fv-SE)),FmFo_HI_mean_NoAmPm, position = position_dodge2(width = 0.5, padding = 0.5))+
   scale_y_continuous(name = "Fluorescence (au)", expand = c(0, 0),sec.axis = sec_axis(~./coef_1, name="Fv/Fm"))+
   # scale_x_continuous(expand = c(NA,NA))+
-  facet_rep_grid(cols=vars(Treatment,Position, AmPm), rows=vars( Species), scales ="fixed")+
+  facet_rep_grid(cols=vars(Treatment,Position), rows=vars( Species), scales ="fixed")+
   theme_classic()+
   theme(strip.placement = "outside",
         strip.background = element_blank(),
