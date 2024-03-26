@@ -150,18 +150,17 @@ HI_DLIC_All_mean_hline_D1<- HI_DLIC_All_y_mean_D1 %>%
 
 HI_DLIC_All_etr_mean_D1<-HI_DLIC_All_1 %>% 
   filter(Notes == "-") %>% 
-  pivot_longer(cols = ETR, names_to = "Parameter", values_to = "Value") %>% 
+  pivot_longer(cols =c(ETR,PAR), names_to = "Parameter", values_to = "Value") %>% 
   group_by(Species, Position, Treatment,  SP, Parameter, Date_1, Sun) %>% 
   summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
   ungroup() %>% 
-  mutate(
-         Treatment = factor(Treatment, levels = c("ML", "HL")),
+  mutate(Treatment = factor(Treatment, levels = c("ML", "HL")),
          Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
          Position = factor(Position, levels = c("Ventral", "Dorsal"))) %>% 
   filter(SP != 1) 
   # na.omit()
 
-coef<-1000
+coef<-2000
 
 Plot_DLIC_D
 Plot_DLIC_D1
@@ -195,22 +194,22 @@ ggplot()+
 # Plot_DLIC_D1<-
 ggplot()+
   geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean_D1 , position = "fill")+
-  geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean_D1)+
-  geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean_D1)+
-  geom_line(aes(x=SP, y=PAR/coef),HI_DLIC_All_y_mean_D1)+
-  geom_point(aes(x=SP, y=PAR/coef),HI_DLIC_All_y_mean_D1, shape = 2, show.legend = TRUE)+
+  geom_line(aes(x=SP, y=Mean/coef, group = Parameter ),HI_DLIC_All_etr_mean_D1)+
+  geom_point(aes(x=SP, y=Mean/coef, shape = Parameter),HI_DLIC_All_etr_mean_D1 )+
+  # geom_line(aes(x=SP, y=PAR/coef),HI_DLIC_All_y_mean_D1)+
+  # geom_point(aes(x=SP, y=PAR/coef),HI_DLIC_All_y_mean_D1, shape = 2, show.legend = TRUE)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
   geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline_D1)+
   geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean_D1, colour="black", width=0.3)+
   theme_classic()+
-  scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR"))+
-  facet_rep_grid(cols=vars(Treatment,Date_1,Sun), rows=vars( Species,Position), scales ="free")+
+  scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR / PAR"))+
+  facet_rep_grid(cols=vars(Treatment,Date_1,Sun), rows=vars(Position, Species), scales ="free")+
   theme(strip.placement = "outside",
         strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0), 
         axis.title.y.right = element_text(vjust=-42),
         legend.justification = c("left"))+
-  scale_x_continuous(expand = c(0, 0))+
+  scale_x_continuous(expand = c(0, 0))
   coord_cartesian(ylim = c(0, 1))
 
 colour = "black"
