@@ -193,9 +193,9 @@ ggplot()+
 
 # Plot_DLIC_D1<-
 ggplot()+
-  geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean_D1 , position = "fill")+
-  geom_line(aes(x=SP, y=Mean/coef, group = Parameter ),HI_DLIC_All_etr_mean_D1)+
-  geom_point(aes(x=SP, y=Mean/coef, shape = Parameter),HI_DLIC_All_etr_mean_D1 )+
+  geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean_D1 , position = "fill",show.legend = FALSE)+
+  geom_line(aes(x=SP, y=Mean/coef, group = Parameter ),HI_DLIC_All_etr_mean_D1, show.legend = FALSE)+
+  geom_point(aes(x=SP, y=Mean/coef, shape = Parameter),HI_DLIC_All_etr_mean_D1, show.legend = FALSE )+
   # geom_line(aes(x=SP, y=PAR/coef),HI_DLIC_All_y_mean_D1)+
   # geom_point(aes(x=SP, y=PAR/coef),HI_DLIC_All_y_mean_D1, shape = 2, show.legend = TRUE)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
@@ -208,10 +208,10 @@ ggplot()+
         strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0), 
         axis.title.y.right = element_text(vjust=-42),
-        legend.justification = c("left"))+
+        legend.justification = element_blank())+
   scale_x_continuous(expand = c(0, 0))
   coord_cartesian(ylim = c(0, 1))
-
+c("left"))
 colour = "black"
 , limits = c(0.25, 1)
 
