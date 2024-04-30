@@ -150,6 +150,7 @@ HI_DLIC_All_mean_hline_D1<- HI_DLIC_All_y_mean_D1 %>%
 
 HI_DLIC_All_etr_mean_D1<-HI_DLIC_All_1 %>% 
   filter(Notes == "-") %>% 
+
   pivot_longer(cols =c(ETR,PAR), names_to = "Parameter", values_to = "Value") %>% 
   group_by(Species, Position, Treatment,  SP, Parameter, Date_1, Sun) %>% 
   summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
@@ -160,9 +161,23 @@ HI_DLIC_All_etr_mean_D1<-HI_DLIC_All_1 %>%
   filter(SP != 1) 
   # na.omit()
 
-coef<-2000
+HI_DLIC_All_diff_mean_D1<-HI_DLIC_All_1 %>% 
+  filter(Notes == "-") %>% 
+  mutate(Diff = ETR/PAR) %>% 
+  pivot_longer(cols =c(Diff), names_to = "Parameter", values_to = "Value") %>% 
+  group_by(Species, Position, Treatment,  SP, Parameter, Date_1, Sun) %>% 
+  summarise(Mean=mean(Value, na.rm=TRUE), SD=sd(Value, na.rm=TRUE), SE=SD/sqrt(n())) %>% 
+  ungroup() %>% 
+  mutate(Treatment = factor(Treatment, levels = c("ML", "HL")),
+         Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon")),
+         Position = factor(Position, levels = c("Ventral", "Dorsal"))) %>% 
+  filter(SP != 1) 
+# na.omit()
 
-Plot_DLIC_D
+coef<-2000
+coef_diff<-0.4
+
+Plot_DLIC_D 
 Plot_DLIC_D1
 Plot_DLIC_D2
  # _D = Date (1,2,3,4,5,6,7,8)
@@ -176,10 +191,12 @@ ggplot()+
   geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean_D , position = "fill")+
   geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_etr_mean_D)+
   geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_etr_mean_D)+
- 
+  # geom_line(aes(x=SP, y=Mean/coef),HI_DLIC_All_diff_mean_D1)+
+  # geom_point(aes(x=SP, y=Mean/coef,fill = Parameter),HI_DLIC_All_diff_mean_D1)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
   geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline_D)+
   geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean_D, colour="black", width=0.3)+
+  # geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean_D, colour="black", width=0.3)+
   theme_classic()+
   scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR"))+
   facet_rep_grid(cols=vars(Treatment,Date,Sun), rows=vars( Species,Position), scales ="free")+
@@ -194,16 +211,19 @@ ggplot()+
 # Plot_DLIC_D1<-
 ggplot()+
   geom_col(aes(x=SP, y=Mean, fill = Parameter),HI_DLIC_All_y_mean_D1 , position = "fill",show.legend = FALSE)+
-  geom_line(aes(x=SP, y=Mean/coef, group = Parameter ),HI_DLIC_All_etr_mean_D1, show.legend = FALSE)+
-  geom_point(aes(x=SP, y=Mean/coef, shape = Parameter),HI_DLIC_All_etr_mean_D1, show.legend = FALSE )+
+  # geom_line(aes(x=SP, y=Mean/coef, group = Parameter ),HI_DLIC_All_etr_mean_D1, show.legend = FALSE)+
+  # geom_point(aes(x=SP, y=Mean/coef, shape = Parameter),HI_DLIC_All_etr_mean_D1, show.legend = FALSE )+
+  geom_line(aes(x=SP, y=Mean*coef_diff, group = Parameter ),HI_DLIC_All_diff_mean_D1, show.legend = FALSE)+
+  geom_point(aes(x=SP, y=Mean*coef_diff, shape = Parameter),HI_DLIC_All_diff_mean_D1, show.legend = FALSE )+
   # geom_line(aes(x=SP, y=PAR/coef),HI_DLIC_All_y_mean_D1)+
   # geom_point(aes(x=SP, y=PAR/coef),HI_DLIC_All_y_mean_D1, shape = 2, show.legend = TRUE)+
   # geom_vline(xintercept=c(2,12), linetype="dashed")+
   geom_hline(aes(yintercept = Mean),HI_DLIC_All_mean_hline_D1)+
-  geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean_D1, colour="black", width=0.3)+
+  geom_errorbar(aes(x=SP, ymax=(Mean*coef_diff+SE*coef_diff), ymin=(Mean*coef_diff-SE*coef_diff)),HI_DLIC_All_diff_mean_D1, colour="black", width=0.3)+
+  # geom_errorbar(aes(x=SP, ymax=(Mean/coef+SE/coef), ymin=(Mean/coef-SE/coef)),HI_DLIC_All_etr_mean_D1, colour="black", width=0.3)+
   theme_classic()+
-  scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef, name="ETR / PAR"))+
-  facet_rep_grid(cols=vars(Treatment,Date_1,Sun), rows=vars(Position, Species), scales ="free")+
+  scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~.*coef_diff, name="ETR / PAR"))+
+  facet_rep_grid(cols=vars(Treatment,Date_1,Sun), rows=vars( Species,Position), scales ="free")+
   theme(strip.placement = "outside",
         strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0), 
