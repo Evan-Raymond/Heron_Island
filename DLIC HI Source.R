@@ -262,7 +262,7 @@ filter(p.adj.signif == "ns")
 
 HI_DLIC_All_y_mean_1<-HI_DLIC_All_1 %>% 
   filter(Notes %in% c("-"), Type == "FO") %>%  
-  select(Date, YII, Fo, Fm, YNO, YNPQ, Species, Position, Treatment, Sample, AmPm, Sun)
+  select(Date, YII, Fo, Fm, YNO, YNPQ, Species, Position, Treatment, Sample, AmPm, Sun, PAR)
 
 FvFmFo_HI_mean<-rbind(Fv_HI_mean_n5_1, FmFo_HI_mean_n5_1) %>% 
   select(-SE_Fv, -Notes, -Type_1, -SE_Value_Fv) %>% 
@@ -281,25 +281,34 @@ HI_DLIC_FmFo_mean_compare<-HI_DLIC_FvFmFo_mean %>%
   mutate(E_Fo =  Fo - DA_Fo*coef_Fo, E_Fm =  Fm - DA_Fm*coef_Fm, E_YII =  YII - DA_FvFm, 
          Sun = factor(Sun, levels = c("Morning", "Midday", "Afternoon"))) %>% 
   group_by(Species, Date, Position, Treatment, Sun) %>% 
+  mutate(Ratio_Fo = DA_Fo/Fo, Ratio_Fm = DA_Fm/Fm) %>% 
   summarise(Change_in_Fo = mean(E_Fo), Change_in_Fm = mean(E_Fm), Change_in_YII = mean(E_YII), 
-            Fo = mean(Fo), Fm = mean(Fm), mean_YII = mean(YII),DA_Fo = mean(DA_Fo), DA_Fm = mean(DA_Fm), DA_FvFm = mean(DA_FvFm)) %>% 
-  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value")
-  mutate(Ratio_Fo = Fo/DA_Fo, Ratio_Fm = Fm/DA_Fm) %>% 
-  filter(Effective_Parameter == "Change_in_YII" ) %>% 
-  filter(Value >= -0.05 & Value <= 0.05) %>% 
-  ungroup() %>% 
-  summarise(Mean_Ratio_Fo = mean(Ratio_Fo), Mean_Ratio_Fm = mean(Ratio_Fm))
+            Fo = mean(Fo), Fm = mean(Fm), mean_YII = mean(YII),DA_Fo = mean(DA_Fo), DA_Fm = mean(DA_Fm), DA_FvFm = mean(DA_FvFm),
+            Mean_Ratio_Fo = mean(Ratio_Fo), Mean_Ratio_Fm = mean(Ratio_Fm), M_PAR = mean(PAR)) %>% 
+  pivot_longer(cols = starts_with("Change_in_"), names_to = "Effective_Parameter", values_to = "Value") %>% 
+  pivot_longer(cols= starts_with("Mean_Ratio"), names_to = "Ratio", values_to = "R_Value") %>% 
+  filter(Effective_Parameter != "Change_in_YII" )
+  # filter(Value >= -0.05 & Value <= 0.05) %>% 
+  # ungroup() %>% 
+  summarise(Mean_Ratio_Fo = mean(Ratio_Fo), Mean_Ratio_Fm = mean(Ratio_Fm)) %>% 
+  
 
 str(HI_DLIC_FmFo_mean_compare)  
   
-coef_3<-2000 
+coef_3<-500 
 
 
 ggplot()+
-  geom_col(aes(x = Date, y = Value, colour = Effective_Parameter, group = Effective_Parameter, fill = Effective_Parameter),
-           HI_DLIC_FmFo_mean_compare,position = "dodge")+
-  geom_line(aes(x = Date, y = Value*coef_3, group = Effective_Parameter),
-            HI_DLIC_Fv_mean_compare,color = "black",show.legend = TRUE)+
+  geom_col(aes(x = Date, y = Value,  group = Effective_Parameter, fill = Effective_Parameter),
+           HI_DLIC_FmFo_mean_compare,position = "dodge", colour = "black")+
+  geom_line(aes(x = Date, y = R_Value*coef_3,  group = Ratio),
+            HI_DLIC_FmFo_mean_compare, color = "black", show.legend = TRUE)+
+  geom_point(aes(x = Date, y = R_Value*coef_3, colour = Ratio, group = Ratio, shape= Ratio),
+            HI_DLIC_FmFo_mean_compare,  show.legend = TRUE)+
+  geom_point(aes(x = Date, y = M_PAR),
+             HI_DLIC_FmFo_mean_compare,  show.legend = TRUE)+
+  geom_line(aes(x = Date, y = M_PAR),
+            HI_DLIC_FmFo_mean_compare, color = "black", show.legend = TRUE)+
   theme_classic()+
   geom_hline(yintercept = 0) + 
   scale_y_continuous(expand = c(0, 0),sec.axis = sec_axis(~./coef_3, name="Fv/Fm"))+
@@ -308,7 +317,7 @@ ggplot()+
         strip.background = element_blank(),
         strip.text.y.right= element_text(angle=0), 
         axis.title.y.right = element_text(vjust=-42),
-        legend.justification = c(0.5,0.5), legend.position = c(1.22, 0.5)) 
+        legend.justification = c(0.5,0.5), legend.position = c(1.075, 0.25)) 
 
 
 HI_DLIC_Fv_mean_compare<-HI_DLIC_FvFmFo_mean %>% 
